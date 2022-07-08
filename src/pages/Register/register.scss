@@ -1,0 +1,163 @@
+@charset "utf-8";
+
+// Import a Google Font
+@import url('https://fonts.googleapis.com/css2?family=Quicksand:wght@700&display=swap');
+
+// Set your brand colors
+$black: #020206;
+$grey: #737372;
+$bg-light: #f2f3f9;
+$blue: #1456c8;
+
+// Update Bulma's global variables
+$family-sans-serif: 'Quicksand', sans-serif;
+$primary: $black;
+$info: $blue;
+$grey-light: $grey;
+$light: $bg-light;
+$body-background-color: $light;
+$box-padding: 2px;
+// $table-cell-padding: 2px;
+$button-border-width: 0;
+$button-border-width: 1px;
+$button-text-color: $grey;
+$input-radius: 10px;
+
+@import '../../../node_modules/bulma/bulma.sass';
+
+.main-page {
+  height: 100vh;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  padding-bottom: calc(150px);
+}
+
+.input-register {
+  min-height: 104px;
+  display: block;
+  width: 100%;
+  border: 0px solid;
+}
+
+.button {
+  white-space: normal;
+}
+
+.overview {
+  min-height: 300px;
+}
+
+.round-corner {
+  border-radius: 20px;
+}
+
+.shadow {
+  -webkit-box-shadow: 0px 8px 14px -2px rgba(0, 0, 0, 0.27);
+  box-shadow: 0px 8px 14px -2px rgba(0, 0, 0, 0.27);
+}
+
+.cost {
+  min-height: 150px;
+}
+
+.next-prev {
+  min-height: 155.5px;
+  display: flex;
+  flex-direction: column;
+  text-align: center;
+  align-items: center;
+}
+
+// .next-prev .box-percentage {
+//   padding: 2px;
+//   border-radius: 5px;
+//   background-color: #ecfff4;
+//   text-align: center;
+//   color: #40ec88;
+// }
+.next-prev .arrow {
+  text-align: center;
+  padding: 0;
+}
+
+.statistics {
+  min-height: 300px;
+}
+
+.title-underline {
+  border-bottom: 1px solid #e4e4e4;
+}
+.email {
+  display: flex;
+  margin: auto;
+  align-items: center;
+}
+.email-text {
+  font-size: 8px;
+  margin-left: 5px;
+}
+.detail-cost {
+  min-height: 155.5px;
+}
+.box-table {
+  max-height: 100px;
+  overflow-y: scroll;
+}
+// .table .is-borderless {
+//   border: 0;
+// }
+.about {
+  min-height: 126px;
+  max-height: 126px;
+}
+
+.box-about {
+  max-height: 70px;
+  overflow: scroll;
+}
+
+.bar-chart {
+}
+.is-clickable {
+  cursor: pointer;
+}
+
+.inputDetail {
+  weight: 200px;
+}
+
+.hero-income {
+  min-height: 425px;
+}
+.hero-income .hero-income-2 {
+  min-height: 320px;
+}
+.btn-add {
+  display: block;
+  width: 100%;
+}
+.round-button {
+  border-radius: 10px;
+}
+.button {
+  border-radius: 10px;
+  // background-color: transparent;
+  // border: 0px solid;
+  // height: 20px;
+  // width: 160px;
+  // color: #ccc;
+}
+
+.add-cost-detail {
+  min-height: 134.5px;
+}
+.input-register {
+  min-height: 104px;
+  display: block;
+  width: 100%;
+  border: 0px solid;
+}
+.input {
+  border-radius: 10px;
+}
