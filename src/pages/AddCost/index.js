@@ -1,6 +1,8 @@
 import axios from 'axios';
 import React, { useState } from 'react';
+import { useDispatch } from 'react-redux';
 import { Button, Gap, Input, Title } from '../../components';
+import { getAllCosts, saveCost } from '../../features/costsAllSlice';
 import { API } from '../../utils/API';
 
 const AddCost = ({ axiosJWT, token }) => {
@@ -8,16 +10,20 @@ const AddCost = ({ axiosJWT, token }) => {
   const [detail, setDetail] = useState('');
   const [price, setPrice] = useState('');
   const [date, setDate] = useState('');
+  const dispatch = useDispatch();
 
-  const addCost = async () => {
+  const addCost = async (e) => {
+    e.preventDefault();
     setIsLoading('is-loading');
-    const userId = sessionStorage.getItem('userId');
-    await axios.post(`${API}/cost`, {
-      id: userId,
-      detail: detail,
-      price: price,
-      date: date,
-    });
+    // const userId = sessionStorage.getItem('userId');
+    // await axios.post(`${API}/cost`, {
+    //   id: userId,
+    //   detail: detail,
+    //   price: price,
+    //   date: date,
+    // });
+    await dispatch(saveCost({ detail, price, date }));
+
     setTimeout(() => {
       setIsLoading('');
       setDate('');
