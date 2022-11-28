@@ -74,10 +74,7 @@ const Home = () => {
   return (
     <div>
       <Navbar />
-      <div
-        className='container is-max-widescreen mx-2'
-        style={{ height: "80vh" }}
-      >
+      <div className='container is-max-widescreen' style={{ height: "80vh" }}>
         {loading ? (
           <div className='loader-gg'>
             <BounceLoader

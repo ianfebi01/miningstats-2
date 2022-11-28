@@ -25,7 +25,6 @@ const IncomeList = () => {
       `${process.env.REACT_APP_BACKEND_URL}/income`
     );
     dispatch({ type: "ALLINCOME", payload: response?.data });
-
     setLoading(false);
   };
   useEffect(() => {
@@ -34,9 +33,12 @@ const IncomeList = () => {
 
   const deleteIncome = async (_id) => {
     setLoadingBtn(_id);
-
     try {
       await axios.delete(`${process.env.REACT_APP_BACKEND_URL}/income/${_id}`);
+
+      const newAllIncome = data.allIncome.filter((item) => item._id !== _id);
+
+      dispatch({ type: "ALLINCOME", payload: newAllIncome });
       setLoadingBtn(null);
     } catch (error) {
       setLoadingBtn(null);
@@ -69,9 +71,20 @@ const IncomeList = () => {
         value: value,
         fee: fee,
       });
+      const index = data?.allIncome.findIndex((item) => item?._id === id);
+      const newAllIncome = data?.allIncome;
+      if (index !== -1) {
+        newAllIncome[index] = {
+          value: value,
+          fee: fee,
+          date: date,
+        };
+
+        dispatch({ type: "ALLINCOME", payload: newAllIncome });
+      }
+
       setLoadingBtn(null);
       cancelEdit();
-      getAllIncome();
     } catch (error) {
       setLoadingBtn(null);
     }
