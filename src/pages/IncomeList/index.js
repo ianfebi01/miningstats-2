@@ -1,51 +1,53 @@
-import axios from 'axios';
-import React from 'react';
-import { useEffect } from 'react';
-import { useState } from 'react';
-import { Button, Gap, Title } from '../../components';
-import { API } from '../../utils/API';
-import { convertDate } from '../../utils/ConvertDate';
-import './incomeList.scss';
-import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
-import { faPenToSquare, faTrashCan } from '@fortawesome/free-solid-svg-icons';
-import { Fragment } from 'react';
-import { Link } from 'react-router-dom';
+import axios from "axios";
+import React from "react";
+import { useEffect } from "react";
+import { useState } from "react";
+import { Button, Gap, Navbar, Title } from "../../components";
+import { convertDate } from "../../utils/ConvertDate";
+import "./incomeList.scss";
+import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
+import { faPenToSquare, faTrashCan } from "@fortawesome/free-solid-svg-icons";
+import { Fragment } from "react";
+import { Link } from "react-router-dom";
+import BounceLoader from "react-spinners/BounceLoader";
+import { useDispatch, useSelector } from "react-redux";
 
-const IncomeList = ({ axiosJWT, token }) => {
-  const [allIncome, setAllIncome] = useState([]);
-  const userId = sessionStorage.getItem('userId');
-  const [isLoading, setIsLoading] = useState('');
+const IncomeList = () => {
+  const dispatch = useDispatch();
+  const { data } = useSelector((state) => ({ ...state }));
+
+  const [loading, setLoading] = useState("");
+  const [loadingBtn, setLoadingBtn] = useState(null);
 
   const getAllIncome = async () => {
-    const response = await axiosJWT.get(`${API}/income/id/${userId}`, {
-      headers: {
-        Authorization: `Bearer ${token}`,
-      },
-    });
-    setAllIncome(response.data);
+    setLoading(true);
+    const response = await axios.get(
+      `${process.env.REACT_APP_BACKEND_URL}/income`
+    );
+    dispatch({ type: "ALLINCOME", payload: response?.data });
+
+    setLoading(false);
   };
   useEffect(() => {
     getAllIncome();
   }, []);
 
   const deleteIncome = async (_id) => {
+    setLoadingBtn(_id);
+
     try {
-      setIsLoading('is-loading');
-      await axios.delete(`${API}/income/${_id}`);
-      setTimeout(() => {
-        setIsLoading('');
-        getAllIncome();
-      }, 1000);
+      await axios.delete(`${process.env.REACT_APP_BACKEND_URL}/income/${_id}`);
+      setLoadingBtn(null);
     } catch (error) {
-      console.log(error);
+      setLoadingBtn(null);
     }
   };
 
-  const [editIncomeId, setEditIncomeId] = useState('');
-  const [id, setId] = useState('');
-  const [value, setValue] = useState('');
-  const [fee, setFee] = useState('');
-  const [date, setDate] = useState('');
+  const [editIncomeId, setEditIncomeId] = useState("");
+  const [id, setId] = useState("");
+  const [value, setValue] = useState("");
+  const [fee, setFee] = useState("");
+  const [date, setDate] = useState("");
 
   const handleEditIncomeClick = (event, item) => {
     event.preventDefault();
@@ -56,138 +58,167 @@ const IncomeList = ({ axiosJWT, token }) => {
     setDate(item.date);
   };
   const cancelEdit = () => {
-    setEditIncomeId('');
+    setEditIncomeId("");
   };
   const saveIncome = async (e) => {
     e.preventDefault();
+    setLoadingBtn(id);
     try {
-      await axios.patch(`${API}/income/${id}`, {
+      await axios.patch(`${process.env.REACT_APP_BACKEND_URL}/income/${id}`, {
         date: date,
         value: value,
         fee: fee,
       });
+      setLoadingBtn(null);
       cancelEdit();
       getAllIncome();
     } catch (error) {
-      console.log(error);
+      setLoadingBtn(null);
     }
   };
 
   return (
     <div>
-      <section className="hero is-small ">
-        <div className="hero-body has-text-centered">
-          <Title textTitle="Income List" />
+      <Navbar />
+      <section className='hero is-small '>
+        <div className='hero-body has-text-centered'>
+          <Title textTitle='Income List' />
         </div>
       </section>
-      <div className="columns is-centered">
-        <div className="column is-9">
-          <section className="hero is-medium round-corner has-background-white income-list">
-            <div className="hero-body px-5 py-4">
-              <ul className="is-flex">
+      <div className='columns is-centered'>
+        <div className='column is-9'>
+          <section className='hero is-medium round-corner has-background-white income-list is-centered'>
+            <div className='hero-body px-5 py-4'>
+              <ul className='is-flex'>
                 <li>
-                  <h1 className="title has-text-primary mb-0">Income</h1>
+                  <h1 className='title has-text-primary mb-0'>Income</h1>
                 </li>
-                <li className="mr-1 ml-auto">
-                  <Link to="/home/addincome">
-                    <Button color="is-info" label="Add Income" />
+                <li className='mr-1 ml-auto'>
+                  <Link to='/addincome'>
+                    <Button color='is-info' label='Add Income' />
                   </Link>
                 </li>
               </ul>
               <Gap height={10} />
-              <form onSubmit={saveIncome}>
-                <table className="table is-fullwidth is-hoverable ">
-                  <thead>
-                    <tr>
-                      <td>No.</td>
-                      <td>Date</td>
-                      <td>Value</td>
-                      <td>Fee</td>
-                      <td>Action</td>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {allIncome.map((item, index) => {
-                      return (
-                        <Fragment>
-                          {editIncomeId === item._id ? (
-                            <tr>
-                              <td>{index + 1}</td>
-                              <td>
-                                <input
-                                  className="input is-small"
-                                  type="date"
-                                  name="date"
-                                  value={date}
-                                  onChange={(e) => setDate(e.target.value)}
-                                />
-                              </td>
-                              <td>
-                                <input
-                                  className="input is-small"
-                                  type="number"
-                                  min="0"
-                                  step="any"
-                                  placeholder="Enter income value"
-                                  name="value"
-                                  value={value}
-                                  onChange={(e) => setValue(e.target.value)}
-                                />
-                              </td>
-                              <td>
-                                <input
-                                  className="input is-small"
-                                  type="number"
-                                  min="0"
-                                  step="any"
-                                  placeholder="Enter income fee"
-                                  name="fee"
-                                  value={fee}
-                                  onChange={(e) => setFee(e.target.value)}
-                                />
-                              </td>
-                              <td>
-                                <Button label="cancel" onClick={cancelEdit} />
-                                <Button type="submit" label="save" />
-                              </td>
-                            </tr>
-                          ) : (
-                            <tr key={index}>
-                              <td>{index + 1}</td>
-                              <td>{convertDate(item.date)}</td>
-                              <td>{item.value}</td>
-                              <td>{item.fee}</td>
-                              <td className="is-centered">
-                                <Button
-                                  label={
-                                    <FontAwesomeIcon
-                                      className="is-clickable"
-                                      icon={faPenToSquare}
-                                      onClick={(event) =>
-                                        handleEditIncomeClick(event, item)
-                                      }
-                                    />
-                                  }
-                                />
-                                <Button
-                                  isLoading={isLoading}
-                                  label={
-                                    <FontAwesomeIcon
-                                      className="is-clickable"
-                                      onClick={() => deleteIncome(item._id)}
-                                      icon={faTrashCan}
-                                    />
-                                  }
-                                />
-                              </td>
-                            </tr>
-                          )}
-                        </Fragment>
-                      );
-                    })}
-                  </tbody>
-                </table>
-              </form>
+              {loading ? (
+                <div className='loader-gg'>
+                  <BounceLoader
+                    color='#1456c8'
+                    loading={loading}
+                    size={70}
+                    aria-label='Loading Spinner'
+                    data-testid='loader'
+                  />
+                </div>
+              ) : (
+                <Fragment>
+                  <table className='table is-fullwidth is-hoverable '>
+                    <thead>
+                      <tr>
+                        <td>No.</td>
+                        <td>Date</td>
+                        <td>Value</td>
+                        <td>Fee</td>
+                        <td>Action</td>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {data?.allIncome?.map((item, index) => {
+                        return (
+                          <Fragment key={index}>
+                            {editIncomeId === item._id ? (
+                              // Edit
+                              <tr key={item?.id}>
+                                <td>{index + 1}</td>
+                                <td>
+                                  <input
+                                    className='input is-small'
+                                    type='date'
+                                    name='date'
+                                    value={date}
+                                    onChange={(e) => setDate(e.target.value)}
+                                  />
+                                </td>
+                                <td>
+                                  <input
+                                    className='input is-small'
+                                    type='number'
+                                    min='0'
+                                    step='any'
+                                    placeholder='Enter income value'
+                                    name='value'
+                                    value={value}
+                                    onChange={(e) => setValue(e.target.value)}
+                                  />
+                                </td>
+                                <td>
+                                  <input
+                                    className='input is-small'
+                                    type='number'
+                                    min='0'
+                                    step='any'
+                                    placeholder='Enter income fee'
+                                    name='fee'
+                                    value={fee}
+                                    onChange={(e) => setFee(e.target.value)}
+                                  />
+                                </td>
+                                <td
+                                  className='is-centered is-flex'
+                                  style={{ gap: "12px" }}
+                                >
+                                  <Button label='cancel' onClick={cancelEdit} />
+                                  <Button
+                                    type='submit'
+                                    isLoading={
+                                      loadingBtn === item?._id ? true : false
+                                    }
+                                    onClick={saveIncome}
+                                    label='save'
+                                  />
+                                </td>
+                              </tr>
+                            ) : (
+                              // Edit End
+                              <tr key={item?.id}>
+                                <td>{index + 1}</td>
+                                <td>{convertDate(item.date)}</td>
+                                <td>{item.value}</td>
+                                <td>{item.fee}</td>
+                                <td
+                                  className='is-centered is-flex'
+                                  style={{ gap: "12px" }}
+                                >
+                                  <Button
+                                    label={
+                                      <FontAwesomeIcon
+                                        className='is-clickable'
+                                        icon={faPenToSquare}
+                                      />
+                                    }
+                                    onClick={(event) =>
+                                      handleEditIncomeClick(event, item)
+                                    }
+                                  />
+                                  <Button
+                                    label={
+                                      <FontAwesomeIcon icon={faTrashCan} />
+                                    }
+                                    onClick={() => deleteIncome(item._id)}
+                                    isLoading={
+                                      loadingBtn === item?._id ? true : false
+                                    }
+                                  />
+                                </td>
+                              </tr>
+                            )}
+                          </Fragment>
+                        );
+                      })}
+                    </tbody>
+                  </table>
+                </Fragment>
+              )}
             </div>
           </section>
         </div>

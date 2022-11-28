@@ -1,125 +1,215 @@
-import React, { Fragment, useEffect, useState } from 'react';
-import jwt_decode from 'jwt-decode';
-import { BrowserRouter, Route, Routes, useNavigate } from 'react-router-dom';
-import axios from 'axios';
+import React, { useEffect, useState, Fragment } from "react";
+
+import axios from "axios";
 import {
-  Card,
   CardChild,
   Detail,
+  Dropdown,
   Gap,
   Navbar,
   PrevNext,
+  ReadOnlyRow,
   Statistic,
   Title,
-} from '../../components';
-import { API } from '../../utils/API';
-import MainPage from '../MainPage';
-import AddIncome from '../AddIncome';
-import AddCost from '../AddCost';
-import IncomeList from '../IncomeList';
-import { convertMonth } from '../../utils/ConvertMonth';
-import CostList from '../CostList';
-import { useDispatch, useSelector } from 'react-redux';
+} from "../../components";
+import { useDispatch, useSelector } from "react-redux";
+import BounceLoader from "react-spinners/BounceLoader";
+import moment from "moment";
 
 const Home = () => {
-  const [name, setName] = useState('');
-  const [token, setToken] = useState('');
-  const navigate = useNavigate();
-  const [expire, setExpire] = useState('');
-  const [userId, setUserId] = useState('');
-  const [data, setData] = useState({
-    labels: 'No Data',
+  const dispatch = useDispatch();
+  const { users } = useSelector((state) => state.user);
+  const [loading, setLoading] = useState(false);
+  const [selected, setSelected] = useState("");
+  const [errorMessage, setErrorMessage] = useState("");
+  const { data } = useSelector((state) => ({ ...state }));
+
+  const dataStatistic = {
+    labels: data?.overview?.allMonth,
     datasets: [
       {
-        label: 'Total WD',
-        data: '0',
-        backgroundColor: ['#1456C8'],
+        label: "Total WD",
+        data: data?.overview?.allIncomeTotal,
+        backgroundColor: ["#1456C8"],
         borderRadius: 20,
         borderSkipped: false,
       },
     ],
-  });
+  };
 
   useEffect(() => {
-    refreshToken();
+    getData();
+    getAllCost();
   }, []);
 
-  const refreshToken = async () => {
+  const getData = async () => {
     try {
-      const response = await axios.get(`${API}/user/token`);
-      setToken(response.data.accessToken);
-      const decoded = jwt_decode(response.data.accessToken);
-      sessionStorage.setItem('userId', decoded.userId);
-      setUserId(decoded.userId);
-      setName(decoded.name);
-      setExpire(decoded.exp);
+      setLoading(true);
+      const res = await axios.get(
+        `${process.env.REACT_APP_BACKEND_URL}/overview`,
+        {
+          headers: {
+            Authorization: "Bearer " + users?.access_token,
+          },
+        }
+      );
+
+      setLoading(false);
+      dispatch({ type: "OVERVIEW", payload: res?.data?.overview });
     } catch (error) {
-      if (error.response) {
-        navigate('/');
-      }
+      setErrorMessage(error?.response?.data?.msg);
     }
   };
 
-  const axiosJWT = axios.create();
-  axiosJWT.interceptors.request.use(
-    async (config) => {
-      const currentDate = new Date();
-      if (expire * 1000 < currentDate.getTime()) {
-        const response = await axios.get('http://localhost:419/user/token');
-        config.headers.Authorization = `Bearer ${response.data.accessToken}`;
-        setToken(response.data.accessToken);
-        const decoded = jwt_decode(response.data.accessToken);
-        setName(decoded.name);
-        setExpire(decoded.exp);
-      }
-      return config;
-    },
-    (error) => {
-      return Promise.reject(error);
-    }
-  );
+  const getAllCost = async () => {
+    setLoading(true);
+    const response = await axios.get(
+      `${process.env.REACT_APP_BACKEND_URL}/cost`
+    );
+    dispatch({ type: "ALLCOST", payload: response?.data });
 
-  const [isLoading, setIsLoading] = useState('');
-
-  const logOut = async () => {
-    try {
-      setIsLoading('is-loading');
-      await axios.delete(`${API}/user/logout`);
-      setTimeout(() => {
-        setIsLoading('');
-        sessionStorage.clear();
-        navigate('/');
-        // window.location.reload();
-      }, 1000);
-    } catch (error) {
-      console.log(error);
-    }
+    setLoading(false);
   };
 
   return (
     <div>
-      <Navbar onClick={logOut} isLoading={isLoading} />
-      <div className="container">
-        <Routes>
-          <Route
-            exact
-            path="/"
-            element={<MainPage axiosJWT={axiosJWT} token={token} />}
-          />
-          <Route path="addincome" element={<AddIncome />} />
-          <Route
-            path="addcost"
-            element={<AddCost axiosJWT={axiosJWT} token={token} />}
-          />
-          <Route
-            path="incomelist"
-            element={<IncomeList axiosJWT={axiosJWT} token={token} />}
-          />
-          <Route
-            path="costlist"
-            element={<CostList axiosJWT={axiosJWT} token={token} />}
-          />
-        </Routes>
+      <Navbar />
+      <div
+        className='container is-max-widescreen mx-2'
+        style={{ height: "80vh" }}
+      >
+        {loading ? (
+          <div className='loader-gg'>
+            <BounceLoader
+              color='#1456c8'
+              loading={loading}
+              size={70}
+              aria-label='Loading Spinner'
+              data-testid='loader'
+            />
+          </div>
+        ) : (
+          <Fragment>
+            <section className='hero is-small '>
+              <div className='hero-body has-text-centered'>
+                <Title textTitle='Data This Month' />
+              </div>
+            </section>
+            <div className='columns is-centered'>
+              <div className='column is-12'>
+                <div className='columns'>
+                  <div className='column is-7'>
+                    <section className='hero is-medium round-corner has-background-white overview py-2'>
+                      <div className='hero-body py-4 px-5'>
+                        <ul className='is-flex'>
+                          <li>
+                            <h1 className='title has-text-primary'>Overview</h1>
+                          </li>
+                          <li className='mr-1 ml-auto'>
+                            {/* Dropdown */}
+                            <Dropdown
+                              month={data?.overview?.allMonth || []}
+                              setSelected={setSelected}
+                            />
+                          </li>
+                        </ul>
+                        <section className='hero round-corner has-background-light'>
+                          <div className='hero-body py-4 px-5'>
+                            <div className='columns'>
+                              <div className='column is-6'>
+                                <CardChild
+                                  backgroundColor='has-background-white'
+                                  shadow='shadow'
+                                  month={data?.overview?.month}
+                                  value={data?.overview?.profit}
+                                  percentage={23}
+                                  textPercentage='Up to'
+                                />
+                              </div>
+                              <div className='column is-6'>
+                                <CardChild
+                                  month={data?.overview?.month}
+                                  value={data?.overview?.cost}
+                                />
+                              </div>
+                            </div>
+                          </div>
+                        </section>
+                      </div>
+                    </section>
+                    <Gap height={20} />
+                    <div className='columns'>
+                      <div className='column is-5'>
+                        <CardChild
+                          backgroundColor='has-background-white'
+                          month={
+                            data?.overview?.incomePrev
+                              ? moment(
+                                  String(data?.overview?.incomePrev?._id?.month)
+                                ).format("MMMM")
+                              : "No Data"
+                          }
+                          value={
+                            data?.overview?.incomePrev
+                              ? data?.overview?.incomePrev?.total
+                              : "0"
+                          }
+                        />
+                      </div>
+                      <div className='column is-2 my-auto'>
+                        <PrevNext />
+                      </div>
+                      <div className='column is-5'>
+                        <CardChild
+                          backgroundColor='has-background-white'
+                          month={moment(
+                            String(data?.overview?.incomeNext?._id?.month)
+                          ).format("MMMM")}
+                          value={data?.overview?.incomeNext?.total}
+                        />
+                      </div>
+                    </div>
+                  </div>
+                  <div className='column is-5'>
+                    <Statistic data={dataStatistic} />
+                    <Gap height={20} />
+                    <section className='hero detail-cost round-corner has-background-white'>
+                      <div className='hero-body py-4 px-5'>
+                        <div className='title-underline is-flex'>
+                          <h1 className='has-text-primary '>Detail Cost</h1>
+                        </div>
+                        <div className='box-table'>
+                          <form action='#'>
+                            <table className='table has-text-primary is-size-7 is-fullwidth is-hoverable'>
+                              <tbody>
+                                {data?.allCost.map((item, index) => {
+                                  return (
+                                    <tr key={item._id}>
+                                      <th className='is-borderless'>
+                                        {index + 1}
+                                      </th>
+                                      <td className='is-borderless'>
+                                        {item.detail}
+                                      </td>
+                                      <td className='is-borderless'>
+                                        {item.price}
+                                      </td>
+                                      <td className='is-borderless'>ETH</td>
+                                    </tr>
+                                  );
+                                })}
+                              </tbody>
+                            </table>
+                          </form>
+                        </div>
+                      </div>
+                    </section>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </Fragment>
+        )}
       </div>
     </div>
   );

@@ -1,121 +1,153 @@
-import React, { useState } from 'react';
-import { API } from '../../utils/API';
-import axios from 'axios';
-import { Button, Gap, Input, Title } from '../../components';
+import React, { useState } from "react";
+
+import axios from "axios";
+import { Button, Gap, Input, Navbar, Title } from "../../components";
+import { ErrorMessage, FastField, Form, Formik } from "formik";
+import * as Yup from "yup";
+import { useSelector } from "react-redux";
 
 const AddIncome = () => {
-  const [value, setValue] = useState('');
-  const [fee, setFee] = useState('');
-  const [date, setDate] = useState('');
-  const [isLoading, setIsLoading] = useState('');
+  const { user } = useSelector((state) => ({ ...state }));
+  const [isLoading, setIsLoading] = useState("");
 
-  const addIncome = async (e) => {
-    e.preventDefault();
-    setIsLoading('is-loading');
-    await axios.post(`${API}/income`, {
-      id: sessionStorage.getItem(`userId`),
-      value: value,
-      fee: fee,
-      date: date,
-    });
-    setTimeout(() => {
-      setIsLoading('');
-      setDate('');
-      setFee('');
-      setValue('');
-    }, 1000);
+  const addIncome = async (values, submitProps) => {
+    try {
+      setIsLoading("is-loading");
+      await axios.post(`${process.env.REACT_APP_BACKEND_URL}/income`, {
+        id: user?.id,
+        value: values?.wd,
+        fee: values?.fee,
+        date: values?.date,
+      });
+      submitProps.resetForm();
+      setIsLoading("");
+    } catch (error) {}
   };
+
+  const validation = Yup.object({
+    wd: Yup.string()
+      .required("Total wd is required")
+      .matches(/^\d*\.?\d*$/, "Only accept valid number"),
+    fee: Yup.string()
+      .required("Fee is required")
+      .matches(/^\d*\.?\d*$/, "Only accept valid number"),
+    date: Yup.string().required("Date is required"),
+  });
   return (
     <div>
-      <section className="hero is-small ">
-        <div className="hero-body has-text-centered">
-          <Title textTitle="Add Income" />
+      <Navbar />
+      <section className='hero is-small '>
+        <div className='hero-body has-text-centered'>
+          <Title textTitle='Add Income' />
         </div>
       </section>
-      <div className="columns is-centered">
-        <div className="column is-6 ">
-          <section className="hero is-medium round-corner has-background-white overview hero-income">
-            <div className="hero-body py-4 px-5 ">
-              <ul className="is-flex">
+      <div className='columns is-centered'>
+        <div className='column is-6 '>
+          <section className='hero is-medium round-corner has-background-white overview hero-income'>
+            <div className='hero-body py-4 px-5 '>
+              <ul className='is-flex'>
                 <li>
-                  <h1 className="title has-text-primary">Add Income</h1>
+                  <h1 className='title has-text-primary'>Add Income</h1>
                 </li>
               </ul>
-              <section className="hero round-corner has-background-light hero-income-2 mt-4">
-                <div className="hero-body px-4 py-5">
-                  <form onSubmit={addIncome}>
-                    <div className="columns">
-                      <div className="column is-6">
-                        <section className="hero round-corner has-background-white shadow">
-                          <div className="hero-body px-4 py-4">
-                            <Input
-                              label="Total widraw"
-                              placeholder="Type here"
-                              type="number"
-                              min="0"
-                              step="any"
-                              className="input my-2 round-button"
-                              value={value}
-                              onChange={(e) => setValue(e.target.value)}
-                            />
-                            <h1 className="title is-size-5 has-text-primary">
-                              ETH
-                            </h1>
+              <section className='hero round-corner has-background-light hero-income-2 mt-4'>
+                <div className='hero-body px-4 py-5'>
+                  <Formik
+                    enableReinitialize
+                    initialValues={{
+                      wd: 0,
+                      fee: 0,
+                      date: "",
+                    }}
+                    validationSchema={validation}
+                    onSubmit={addIncome}
+                  >
+                    {(formik) => (
+                      <Form>
+                        <div className='columns'>
+                          <div className='column is-6'>
+                            <section className='hero round-corner has-background-white shadow'>
+                              <div className='hero-body px-4 py-4'>
+                                <span className='is-size-6 has-text-primary mb-1 '>
+                                  Total widraw
+                                </span>
+                                <FastField
+                                  name='wd'
+                                  type='text'
+                                  placeholder='Type here'
+                                  className='input'
+                                  onChange={formik?.handleChange("wd")}
+                                />
+
+                                <span className='error-message'>
+                                  <ErrorMessage name='wd' />
+                                </span>
+                                <h1 className='title is-size-5 has-text-primary'>
+                                  ETH
+                                </h1>
+                              </div>
+                            </section>
                           </div>
-                        </section>
-                      </div>
-                      <div className="column is-6">
-                        <section className="hero round-corner has-background-white shadow">
-                          <div className="hero-body px-4 py-4">
-                            <Input
-                              label="Fee"
-                              placeholder="Type here"
-                              type="number"
-                              min="0"
-                              step="any"
-                              className="input my-2 round-button"
-                              value={fee}
-                              onChange={(e) => setFee(e.target.value)}
-                            />
-                            <h1 className="title is-size-5 has-text-primary">
-                              ETH
-                            </h1>
-                          </div>
-                        </section>
-                      </div>
-                    </div>
-                    <section className="hero round-corner has-background-white shadow">
-                      <div className="hero-body px-4 py-4">
-                        <div className="columns">
-                          <div className="column is-9">
-                            <Input
-                              label="Date"
-                              placeholder="Type here"
-                              type="date"
-                              className="input my-2"
-                              value={date}
-                              onChange={(e) => setDate(e.target.value)}
-                            />
-                          </div>
-                          <div className="column is-3">
-                            <Gap height={35} />
-                            <Button
-                              color="is-info"
-                              isLoading={isLoading}
-                              type="submit"
-                              label="Submit"
-                            />
-                            {/* <button
-                              type="submit"
-                              className={`button my-2 btn-add is-info round-button ${isLoading} `}
-                            >
-                              Submit
-                            </button> */}
+                          <div className='column is-6'>
+                            <section className='hero round-corner has-background-white shadow'>
+                              <div className='hero-body px-4 py-4'>
+                                <span className='is-size-6 has-text-primary mb-1 '>
+                                  Fee
+                                </span>
+                                <FastField
+                                  name='fee'
+                                  type='text'
+                                  step='any'
+                                  min='0'
+                                  placeholder='Type here'
+                                  className='input'
+                                  onChange={formik?.handleChange("fee")}
+                                />
+
+                                <span className='error-message'>
+                                  <ErrorMessage name='fee' />
+                                </span>
+                                <h1 className='title is-size-5 has-text-primary'>
+                                  ETH
+                                </h1>
+                              </div>
+                            </section>
                           </div>
                         </div>
-                      </div>
-                    </section>
-                  </form>
+                        <section className='hero round-corner has-background-white shadow'>
+                          <div className='hero-body px-4 py-4'>
+                            <div className='columns'>
+                              <div className='column is-9'>
+                                <span className='is-size-6 has-text-primary mb-1'>
+                                  Date
+                                </span>
+                                <FastField
+                                  type='date'
+                                  name='date'
+                                  placeholder='Type here'
+                                  className='input'
+                                  onChange={formik?.handleChange("date")}
+                                />
+
+                                <span className='error-message'>
+                                  <ErrorMessage name='date' />
+                                </span>
+                              </div>
+                              <div className='column is-3'>
+                                <Gap height={22} />
+                                <Button
+                                  color='is-info'
+                                  isLoading={isLoading}
+                                  type='submit'
+                                  label='Submit'
+                                />
+                              </div>
+                            </div>
+                          </div>
+                        </section>
+                      </Form>
+                    )}
+                  </Formik>
                 </div>
               </section>
             </div>

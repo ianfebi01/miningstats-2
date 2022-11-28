@@ -1,90 +1,143 @@
-import React, { useEffect, useState } from 'react';
-import { ButtonLarge, Gap, InputWrapper, Link, Title } from '../../components';
-import { useNavigate } from 'react-router-dom';
-import axios from 'axios';
+import React, { useEffect, useState } from "react";
+import { ButtonLarge, Gap, InputWrapper, Link, Title } from "../../components";
+import { Navigate, NavLink, useNavigate } from "react-router-dom";
+import axios from "axios";
+import { useDispatch, useSelector } from "react-redux";
+import Cookies from "js-cookie";
+import { Formik, Form, Field, ErrorMessage, FastField } from "formik";
+import * as Yup from "yup";
+import "./style.scss";
 
 const Login = () => {
-  const [email, setEmail] = useState('');
-  const [password, setPassword] = useState('');
-  const [isLoading, setIsLoading] = useState('');
-  const [msg, setMsg] = useState('');
+  const [loading, setLoading] = useState(false);
+  const [msg, setMsg] = useState("");
   const navigate = useNavigate();
+  const dispatch = useDispatch();
+  const { message } = useSelector((state) => ({ ...state }));
 
-  const Auth = async (e) => {
-    e.preventDefault();
-    setIsLoading('is-loading');
+  const loginIfos = {
+    email: "",
+    password: "",
+  };
+  const [login, setLogin] = useState(loginIfos);
+  const { email, password } = login;
+
+  const handleLoginChange = (e) => {
+    const { name, value } = e.target;
+    setLogin({ ...login, [name]: value });
+  };
+
+  const Auth = async (values, submitProps) => {
     try {
-      await axios.post('http://localhost:419/user/login', {
-        email: email,
-        password: password,
-      });
-      setTimeout(() => {
-        setIsLoading('');
-        navigate('/home');
-        // window.location.reload();
-      }, 1000);
+      setLoading(true);
+      const res = await axios.post(
+        `${process.env.REACT_APP_BACKEND_URL}/user/login`,
+        {
+          email: values.email,
+          password: values.password,
+        }
+      );
+
+      dispatch({ type: "LOGIN", payload: res?.data });
+      Cookies.set("user", JSON.stringify(res?.data));
+      setLoading(false);
+      navigate("/home");
+      submitProps.resetForm();
     } catch (error) {
-      if (error.response) {
-        setMsg(error.response.data.msg);
-        setIsLoading('');
-      }
+      setLoading(false);
+      setMsg(error?.response?.data?.msg);
+      submitProps.resetForm();
     }
   };
 
-  useEffect(() => {
-    if (sessionStorage.getItem('userId')) return navigate('/home');
-  }, []);
+  // Validations
+  const loginValidation = Yup.object({
+    email: Yup.string()
+      .required("Email is required")
+      .email("Email must be a valid email"),
+    password: Yup.string()
+      .required("Passwrod is required")
+      .min(6, "Password must be at least 6 characters long"),
+  });
 
   return (
-    <div className="main-page container is-max-desktop">
-      <section className="hero is-small ">
-        <div className="hero-body has-text-centered">
-          <Title textTitle="Sign in" />
+    <div className='main-page container is-max-desktop'>
+      <section className='hero is-small '>
+        <div className='hero-body'>
+          <div className='container  has-text-centered'>
+            <Title textTitle='Sign in' />
+            {message?.register === "Register Success" ? (
+              <span className='has-text-success'>{message?.register}</span>
+            ) : (
+              <span className='has-text-danger'>{message?.register}</span>
+            )}
+          </div>
         </div>
       </section>
-      <div className="columns is-centered">
-        <div className="column is-5">
-          <form onSubmit={Auth}>
-            <div className="columns is is-centered">
-              <div className="column is-8">
-                <InputWrapper
-                  label="Email"
-                  placeholder="Enter email"
-                  type="text"
-                  value={email}
-                  onChange={(e) => setEmail(e.target.value)}
+
+      <Formik
+        initialValues={{
+          email,
+          password,
+        }}
+        validationSchema={loginValidation}
+        onSubmit={Auth}
+      >
+        {(formik) => (
+          <Form>
+            <div className='columns is is-centered mx-4'>
+              <div className='column' style={{ maxWidth: "400px" }}>
+                <span className='is-size-6 has-text-primary mb-1'>Email</span>
+                <FastField
+                  type='text'
+                  name='email'
+                  placeholder='Enter your email'
+                  className='input'
+                  onChange={formik?.handleChange("email")}
                 />
-                <Gap height={20} />
-                <InputWrapper
-                  label="Password"
-                  placeholder="Enter password"
-                  type="password"
-                  value={password}
-                  onChange={(e) => setPassword(e.target.value)}
+
+                <span className='error-message'>
+                  <ErrorMessage name='email' />
+                </span>
+                <Gap height={10} />
+                <span className='is-size-6 has-text-primary mb-1 '>
+                  Password
+                </span>
+                <FastField
+                  type='password'
+                  name='password'
+                  placeholder='Enter your password'
+                  className='input'
+                  onChange={formik?.handleChange("password")}
                 />
-              </div>
-              <div className="column is-4">
-                <ButtonLarge
-                  color="is-info"
-                  label="Sign in"
-                  isLoading={isLoading}
-                  type="submit"
-                />
-                <Gap height={20} />
-                <ButtonLarge color="is-white" label="Forgot password" />
+
+                <span className='error-message'>
+                  <ErrorMessage name='password' />
+                </span>
+
+                <Gap height={10} />
+                <button
+                  className={`button my-1  is-info ${
+                    loading ? "is-loading" : ""
+                  }`}
+                  type='submit'
+                  disabled={!formik.isValid}
+                >
+                  Sign In
+                </button>
+
+                <Gap height={5} />
+
+                <div className='not_have_account'>
+                  <p>Not have account?</p>
+                  <Gap width={5} />
+                  <NavLink to='/register'> Sign up here.</NavLink>
+                </div>
               </div>
             </div>
-            <div className="columns is is-centered">
-              <Link
-                label="Not have account?"
-                link="/register"
-                linkLabel="Sign up here."
-              />
-            </div>
-          </form>
-          <h1 className="has-text-centered title has-text-danger">{msg}</h1>
-        </div>
-      </div>
+          </Form>
+        )}
+      </Formik>
     </div>
   );
 };
